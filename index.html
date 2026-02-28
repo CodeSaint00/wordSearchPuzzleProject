@@ -1,334 +1,618 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Word Search</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Search</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-  body {
-    background: #ffffff;
-    font-family: 'Space Mono', monospace;
-    color: #111;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 28px 16px;
-  }
+      body {
+        background: #ffffff;
+        font-family: "Space Mono", monospace;
+        color: #111;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 12px;
+      }
 
-  header {
-    text-align: center;
-    margin-bottom: 24px;
-  }
+      header {
+        text-align: center;
+        margin-bottom: 20px;
+        padding: 0 8px;
+      }
 
-  header h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #111;
-    letter-spacing: 0.04em;
-  }
+      header h1 {
+        font-family: "Playfair Display", serif;
+        font-size: clamp(1.1rem, 5vw, 1.8rem);
+        font-weight: 700;
+        color: #111;
+        letter-spacing: 0.03em;
+        line-height: 1.3;
+      }
 
-  header p {
-    color: #888;
-    font-size: 0.68rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    margin-top: 4px;
-  }
+      header p {
+        color: #888;
+        font-size: clamp(0.55rem, 2vw, 0.68rem);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-top: 4px;
+      }
 
-  .divider {
-    width: 60px;
-    height: 2px;
-    background: #111;
-    margin: 10px auto;
-  }
+      .divider {
+        width: 50px;
+        height: 2px;
+        background: #111;
+        margin: 8px auto;
+      }
 
-  .main-layout {
-    display: flex;
-    gap: 28px;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    justify-content: center;
-    width: 100%;
-    max-width: 900px;
-  }
+      /* ── LAYOUT ── */
+      .main-layout {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        max-width: 960px;
+      }
 
-  .grid-wrapper {
-    border: 2px solid #111;
-    padding: 14px;
-    background: #fff;
-  }
+      /* On phones: stack vertically, grid on top */
+      @media (max-width: 640px) {
+        .main-layout {
+          flex-direction: column;
+          align-items: center;
+          gap: 16px;
+        }
+      }
 
-  #grid {
-    display: grid;
-    gap: 1px;
-    user-select: none;
-    cursor: crosshair;
-  }
+      /* ── GRID ── */
+      .grid-wrapper {
+        border: 2px solid #111;
+        padding: 10px;
+        background: #fff;
+        /* Shrink to fit screen width on mobile */
+        max-width: calc(100vw - 24px);
+        overflow: hidden;
+      }
 
-  .cell {
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.95rem;
-    font-weight: 700;
-    border-radius: 2px;
-    transition: background 0.12s, color 0.12s;
-    color: #111;
-  }
+      #grid {
+        display: grid;
+        gap: 1px;
+        user-select: none;
+        cursor: crosshair;
+        touch-action: none;
+      }
 
-  .cell.selecting { background: #f0e68c; color: #111; }
-  .cell.found-0 { background: #ffd700; color: #111; }
-  .cell.found-1 { background: #90ee90; color: #111; }
-  .cell.found-2 { background: #ffb6c1; color: #111; }
-  .cell.found-3 { background: #87ceeb; color: #111; }
-  .cell.found-4 { background: #dda0dd; color: #111; }
-  .cell.found-5 { background: #ffa07a; color: #111; }
-  .cell.found-6 { background: #98fb98; color: #111; }
+      .cell {
+        /* Cell size adapts to screen */
+        width: var(--cell, 30px);
+        height: var(--cell, 30px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Space Mono", monospace;
+        font-size: var(--cell-font, 0.9rem);
+        font-weight: 700;
+        border-radius: 2px;
+        transition:
+          background 0.12s,
+          color 0.12s;
+        color: #111;
+      }
 
-  .words-panel { min-width: 210px; }
+      .cell.selecting {
+        background: #f0e68c;
+        color: #111;
+      }
+      .cell.found-0 {
+        background: #ffd700;
+        color: #111;
+      }
+      .cell.found-1 {
+        background: #90ee90;
+        color: #111;
+      }
+      .cell.found-2 {
+        background: #ffb6c1;
+        color: #111;
+      }
+      .cell.found-3 {
+        background: #87ceeb;
+        color: #111;
+      }
+      .cell.found-4 {
+        background: #dda0dd;
+        color: #111;
+      }
+      .cell.found-5 {
+        background: #ffa07a;
+        color: #111;
+      }
+      .cell.found-6 {
+        background: #98fb98;
+        color: #111;
+      }
 
-  .words-panel h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1rem;
-    color: #111;
-    letter-spacing: 0.06em;
-    margin-bottom: 14px;
-    text-transform: uppercase;
-    border-bottom: 2px solid #111;
-    padding-bottom: 6px;
-  }
+      /* ── WORDS PANEL ── */
+      .words-panel {
+        min-width: 180px;
+        width: 100%;
+        max-width: 420px;
+      }
 
-  .word-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 10px;
-    margin-bottom: 5px;
-    border: 1.5px solid #ddd;
-    border-radius: 2px;
-    font-size: 0.72rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #444;
-    background: #fafafa;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-  }
+      .words-panel h2 {
+        font-family: "Playfair Display", serif;
+        font-size: 0.95rem;
+        color: #111;
+        letter-spacing: 0.06em;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        border-bottom: 2px solid #111;
+        padding-bottom: 6px;
+      }
 
-  .word-item .check { opacity: 0; transition: opacity 0.3s; flex-shrink: 0; }
+      /* On mobile show words in a 2-column grid */
+      #wordList {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+      }
 
-  .word-item.found-0 { background: #fff9d6; border-color: #ffd700; color: #333; }
-  .word-item.found-1 { background: #f0fff0; border-color: #90ee90; color: #333; }
-  .word-item.found-2 { background: #fff0f3; border-color: #ffb6c1; color: #333; }
-  .word-item.found-3 { background: #f0f8ff; border-color: #87ceeb; color: #333; }
-  .word-item.found-4 { background: #faf0ff; border-color: #dda0dd; color: #333; }
-  .word-item.found-5 { background: #fff5f0; border-color: #ffa07a; color: #333; }
-  .word-item.found-6 { background: #f0fff4; border-color: #98fb98; color: #333; }
+      @media (min-width: 641px) {
+        #wordList {
+          grid-template-columns: 1fr;
+        }
+        .words-panel {
+          min-width: 200px;
+          max-width: 220px;
+        }
+      }
 
-  .word-item[class*="found"] .check { opacity: 1; }
+      .word-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px;
+        border: 1.5px solid #ddd;
+        border-radius: 2px;
+        font-size: clamp(0.58rem, 2.2vw, 0.72rem);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #444;
+        background: #fafafa;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        white-space: nowrap;
+      }
 
-  .word-item .strike {
-    position: absolute;
-    left: 10px; right: 10px; top: 50%;
-    height: 1.5px; background: #999;
-    opacity: 0; transform: scaleX(0); transform-origin: left;
-    transition: opacity 0.3s, transform 0.4s ease;
-  }
-  .word-item[class*="found"] .strike { opacity: 0.5; transform: scaleX(1); }
+      .word-item .check {
+        opacity: 0;
+        transition: opacity 0.3s;
+        flex-shrink: 0;
+        font-size: 0.8rem;
+      }
 
-  .status {
-    margin-top: 16px; text-align: center;
-    font-size: 0.68rem; letter-spacing: 0.15em;
-    text-transform: uppercase; color: #888;
-  }
-  .status.win { color: #222; font-family: 'Playfair Display', serif; font-size: 0.95rem; }
+      .word-item.found-0 {
+        background: #fff9d6;
+        border-color: #ffd700;
+        color: #333;
+      }
+      .word-item.found-1 {
+        background: #f0fff0;
+        border-color: #90ee90;
+        color: #333;
+      }
+      .word-item.found-2 {
+        background: #fff0f3;
+        border-color: #ffb6c1;
+        color: #333;
+      }
+      .word-item.found-3 {
+        background: #f0f8ff;
+        border-color: #87ceeb;
+        color: #333;
+      }
+      .word-item.found-4 {
+        background: #faf0ff;
+        border-color: #dda0dd;
+        color: #333;
+      }
+      .word-item.found-5 {
+        background: #fff5f0;
+        border-color: #ffa07a;
+        color: #333;
+      }
+      .word-item.found-6 {
+        background: #f0fff4;
+        border-color: #98fb98;
+        color: #333;
+      }
 
-  .progress { margin-top: 10px; height: 3px; background: #eee; border-radius: 2px; overflow: hidden; }
-  .progress-bar { height: 100%; background: #111; width: 0%; transition: width 0.5s ease; }
+      .word-item[class*="found"] .check {
+        opacity: 1;
+      }
 
-  .btn-reset {
-    margin-top: 14px; width: 100%; padding: 8px;
-    background: #111; border: none; color: #fff;
-    font-family: 'Space Mono', monospace; font-size: 0.65rem;
-    letter-spacing: 0.18em; text-transform: uppercase;
-    cursor: pointer; border-radius: 2px; transition: background 0.2s;
-  }
-  .btn-reset:hover { background: #333; }
+      .word-item .strike {
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        top: 50%;
+        height: 1.5px;
+        background: #999;
+        opacity: 0;
+        transform: scaleX(0);
+        transform-origin: left;
+        transition:
+          opacity 0.3s,
+          transform 0.4s ease;
+      }
+      .word-item[class*="found"] .strike {
+        opacity: 0.5;
+        transform: scaleX(1);
+      }
 
-  .instructions {
-    font-size: 0.62rem; color: #aaa; letter-spacing: 0.08em;
-    margin-top: 12px; line-height: 1.9; text-transform: uppercase;
-    border-top: 1px solid #eee; padding-top: 10px;
-  }
-</style>
-</head>
-<body>
+      /* ── FOOTER CONTROLS ── */
+      .status {
+        margin-top: 14px;
+        text-align: center;
+        font-size: 0.68rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #888;
+      }
+      .status.win {
+        color: #222;
+        font-family: "Playfair Display", serif;
+        font-size: 0.9rem;
+      }
 
-<header>
-  <h1>Happy Birthday Nhurmzy❤️🥳</h1>
-  <div class="divider"></div>
-  <p>Find all hidden words in the Puzzle</p>
-</header>
+      .progress {
+        margin-top: 8px;
+        height: 3px;
+        background: #eee;
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .progress-bar {
+        height: 100%;
+        background: #111;
+        width: 0%;
+        transition: width 0.5s ease;
+      }
 
-<div class="main-layout">
-  <div class="grid-wrapper">
-    <div id="grid"></div>
-  </div>
+      .btn-reset {
+        margin-top: 12px;
+        width: 100%;
+        padding: 9px;
+        background: #111;
+        border: none;
+        color: #fff;
+        font-family: "Space Mono", monospace;
+        font-size: 0.63rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        cursor: pointer;
+        border-radius: 2px;
+        transition: background 0.2s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .btn-reset:hover {
+        background: #333;
+      }
+      .btn-reset:active {
+        background: #555;
+      }
 
-  <div class="words-panel">
-    <h2>Find Words</h2>
-    <div id="wordList"></div>
-    <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
-    <div class="status" id="status">0 of 7 found</div>
-    <button class="btn-reset" onclick="init()">↺ New Puzzle</button>
-    <div class="instructions">
-      Click &amp; drag to select<br>
-      All 8 directions
+      .instructions {
+        font-size: 0.58rem;
+        color: #bbb;
+        letter-spacing: 0.08em;
+        margin-top: 10px;
+        line-height: 1.9;
+        text-transform: uppercase;
+        border-top: 1px solid #eee;
+        padding-top: 8px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Happy Birthday Nhurmzy❤️🥳</h1>
+      <div class="divider"></div>
+      <p>Find all hidden words in the Puzzle</p>
+    </header>
+
+    <div class="main-layout">
+      <div class="grid-wrapper" id="gridWrapper">
+        <div id="grid"></div>
+      </div>
+
+      <div class="words-panel">
+        <h2>Find Words</h2>
+        <div id="wordList"></div>
+        <div class="progress">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="status" id="status">0 of 7 found</div>
+        <button class="btn-reset" onclick="init()">↺ New Puzzle</button>
+        <div class="instructions">
+          Tap &amp; drag to select · All 8 directions
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
-<script>
-// Display labels (with spaces/original casing) vs search keys (uppercase, no spaces)
-const WORD_DEFS = [
-  { label: 'KINDHEARTED',      key: 'KINDHEARTED' },
-  { label: 'RESERVED',         key: 'RESERVED' },
-  { label: 'RESPONSIBLE',      key: 'RESPONSIBLE' },
-  { label: 'CODESAINT',        key: 'CODESAINT' },
-  { label: 'ENWEREFRANCIS',    key: 'ENWEREFRANCIS' },
-  { label: 'NHURMZY',          key: 'NHURMZY' },
-  { label: 'HAPPY BIRTHDAY',   key: 'HAPPYBIRTHDAY' },
-];
+    <script>
+      const WORD_DEFS = [
+        { label: "KINDHEARTED", key: "KINDHEARTED" },
+        { label: "RESERVED", key: "RESERVED" },
+        { label: "RESPONSIBLE", key: "RESPONSIBLE" },
+        { label: "CODESAINT", key: "CODESAINT" },
+        { label: "ENWEREFRANCIS", key: "ENWEREFRANCIS" },
+        { label: "NHURMZY", key: "NHURMZY" },
+        { label: "HAPPY BIRTHDAY", key: "HAPPYBIRTHDAY" },
+      ];
 
-const SIZE = 20;
-let grid=[], placed=[], selecting=false, startCell=null, currentCells=[], foundWords=[];
+      const SIZE = 20;
+      let grid = [],
+        placed = [],
+        selecting = false,
+        startCell = null,
+        currentCells = [],
+        foundWords = [];
 
-function init() {
-  grid = Array.from({length:SIZE}, () => Array(SIZE).fill(''));
-  placed=[]; foundWords=[]; currentCells=[]; selecting=false;
-  // Sort longest first for better placement
-  const sorted = [...WORD_DEFS].sort((a,b) => b.key.length - a.key.length);
-  sorted.forEach(w => placeWord(w));
-  const alpha='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++)
-    if(!grid[r][c]) grid[r][c]=alpha[Math.floor(Math.random()*26)];
-  render(); renderWordList(); updateStatus();
-}
+      /* ── Responsive cell size ── */
+      function getCellSize() {
+        const padding = 24 + 20; // grid wrapper padding + body padding
+        const available = Math.min(window.innerWidth - padding, 420);
+        const size = Math.floor((available - SIZE) / SIZE); // subtract gaps
+        return Math.max(18, Math.min(30, size));
+      }
 
-function placeWord(wordDef) {
-  const word = wordDef.key;
-  const dirs=[[0,1],[1,0],[0,-1],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
-  for(let a=0;a<1000;a++) {
-    const dir=dirs[Math.floor(Math.random()*8)];
-    const row=Math.floor(Math.random()*SIZE), col=Math.floor(Math.random()*SIZE);
-    const endR=row+dir[0]*(word.length-1), endC=col+dir[1]*(word.length-1);
-    if(endR<0||endR>=SIZE||endC<0||endC>=SIZE) continue;
-    let ok=true; const cells=[];
-    for(let i=0;i<word.length;i++){
-      const r=row+dir[0]*i, c=col+dir[1]*i;
-      if(grid[r][c]&&grid[r][c]!==word[i]){ok=false;break;}
-      cells.push([r,c]);
-    }
-    if(!ok) continue;
-    cells.forEach(([r,c],i)=>grid[r][c]=word[i]);
-    placed.push({...wordDef, cells}); return;
-  }
-}
+      function applyCellSize() {
+        const s = getCellSize();
+        document.documentElement.style.setProperty("--cell", s + "px");
+        document.documentElement.style.setProperty(
+          "--cell-font",
+          s * 0.5 + "px",
+        );
+        const g = document.getElementById("grid");
+        if (g) g.style.gridTemplateColumns = `repeat(${SIZE}, ${s}px)`;
+      }
 
-function render() {
-  const g=document.getElementById('grid');
-  g.style.gridTemplateColumns=`repeat(${SIZE}, 30px)`;
-  g.innerHTML='';
-  for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
-    const el=document.createElement('div');
-    el.className='cell'; el.textContent=grid[r][c];
-    el.dataset.r=r; el.dataset.c=c;
-    el.addEventListener('mousedown',onDown);
-    el.addEventListener('mouseover',onOver);
-    el.addEventListener('touchstart',onTouchStart,{passive:false});
-    el.addEventListener('touchmove',onTouchMove,{passive:false});
-    g.appendChild(el);
-  }
-  document.addEventListener('mouseup',onUp);
-  document.addEventListener('touchend',onUp);
-  applyFoundColors();
-}
+      window.addEventListener("resize", applyCellSize);
 
-const getEl=(r,c)=>document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+      /* ── Init ── */
+      function init() {
+        applyCellSize();
+        grid = Array.from({ length: SIZE }, () => Array(SIZE).fill(""));
+        placed = [];
+        foundWords = [];
+        currentCells = [];
+        selecting = false;
+        [...WORD_DEFS]
+          .sort((a, b) => b.key.length - a.key.length)
+          .forEach((w) => placeWord(w));
+        const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        for (let r = 0; r < SIZE; r++)
+          for (let c = 0; c < SIZE; c++)
+            if (!grid[r][c]) grid[r][c] = alpha[Math.floor(Math.random() * 26)];
+        render();
+        renderWordList();
+        updateStatus();
+      }
 
-function onDown(e){selecting=true;startCell=[+e.target.dataset.r,+e.target.dataset.c];currentCells=[startCell];highlightSelecting();}
-function onOver(e){if(!selecting)return;currentCells=between(startCell,[+e.target.dataset.r,+e.target.dataset.c]);highlightSelecting();}
-function onTouchStart(e){e.preventDefault();const el=document.elementFromPoint(e.touches[0].clientX,e.touches[0].clientY);if(el?.classList.contains('cell')){selecting=true;startCell=[+el.dataset.r,+el.dataset.c];currentCells=[startCell];highlightSelecting();}}
-function onTouchMove(e){e.preventDefault();if(!selecting)return;const el=document.elementFromPoint(e.touches[0].clientX,e.touches[0].clientY);if(el?.classList.contains('cell')){currentCells=between(startCell,[+el.dataset.r,+el.dataset.c]);highlightSelecting();}}
-function onUp(){if(!selecting)return;selecting=false;checkSelection();clearSelecting();}
+      function placeWord(wordDef) {
+        const word = wordDef.key;
+        const dirs = [
+          [0, 1],
+          [1, 0],
+          [0, -1],
+          [-1, 0],
+          [1, 1],
+          [1, -1],
+          [-1, 1],
+          [-1, -1],
+        ];
+        for (let a = 0; a < 1000; a++) {
+          const dir = dirs[Math.floor(Math.random() * 8)];
+          const row = Math.floor(Math.random() * SIZE),
+            col = Math.floor(Math.random() * SIZE);
+          const endR = row + dir[0] * (word.length - 1),
+            endC = col + dir[1] * (word.length - 1);
+          if (endR < 0 || endR >= SIZE || endC < 0 || endC >= SIZE) continue;
+          let ok = true;
+          const cells = [];
+          for (let i = 0; i < word.length; i++) {
+            const r = row + dir[0] * i,
+              c = col + dir[1] * i;
+            if (grid[r][c] && grid[r][c] !== word[i]) {
+              ok = false;
+              break;
+            }
+            cells.push([r, c]);
+          }
+          if (!ok) continue;
+          cells.forEach(([r, c], i) => (grid[r][c] = word[i]));
+          placed.push({ ...wordDef, cells });
+          return;
+        }
+      }
 
-function between([r1,c1],[r2,c2]){
-  const dr=r2-r1,dc=c2-c1,len=Math.max(Math.abs(dr),Math.abs(dc));
-  if(!len)return[[r1,c1]];
-  const sr=dr===0?0:dr/Math.abs(dr),sc=dc===0?0:dc/Math.abs(dc);
-  return Array.from({length:len+1},(_,i)=>[r1+sr*i,c1+sc*i]);
-}
+      function render() {
+        const g = document.getElementById("grid");
+        const s = getCellSize();
+        g.style.gridTemplateColumns = `repeat(${SIZE}, ${s}px)`;
+        g.innerHTML = "";
+        for (let r = 0; r < SIZE; r++)
+          for (let c = 0; c < SIZE; c++) {
+            const el = document.createElement("div");
+            el.className = "cell";
+            el.textContent = grid[r][c];
+            el.dataset.r = r;
+            el.dataset.c = c;
+            el.addEventListener("mousedown", onDown);
+            el.addEventListener("mouseover", onOver);
+            el.addEventListener("touchstart", onTouchStart, { passive: false });
+            el.addEventListener("touchmove", onTouchMove, { passive: false });
+            g.appendChild(el);
+          }
+        document.addEventListener("mouseup", onUp);
+        document.addEventListener("touchend", onUp);
+        applyFoundColors();
+      }
 
-function highlightSelecting(){
-  document.querySelectorAll('.cell.selecting').forEach(el=>el.classList.remove('selecting'));
-  currentCells.forEach(([r,c])=>{const el=getEl(r,c);if(el&&!isFound(r,c))el.classList.add('selecting');});
-}
-function clearSelecting(){document.querySelectorAll('.cell.selecting').forEach(el=>el.classList.remove('selecting'));}
-function isFound(r,c){return foundWords.some(fw=>fw.cells.some(([fr,fc])=>fr===r&&fc===c));}
+      const getEl = (r, c) =>
+        document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
 
-function checkSelection(){
-  if(currentCells.length<2)return;
-  const sel=currentCells.map(([r,c])=>grid[r][c]).join('');
-  const rev=sel.split('').reverse().join('');
-  for(const p of placed){
-    if(foundWords.find(fw=>fw.key===p.key))continue;
-    if(p.key===sel||p.key===rev){
-      const ci=WORD_DEFS.findIndex(w=>w.key===p.key);
-      foundWords.push({...p, colorIdx:ci});
-      applyFoundColors();markWordFound(p.key,ci);updateStatus();break;
-    }
-  }
-}
+      function onDown(e) {
+        e.preventDefault();
+        selecting = true;
+        startCell = [+e.target.dataset.r, +e.target.dataset.c];
+        currentCells = [startCell];
+        highlightSelecting();
+      }
+      function onOver(e) {
+        if (!selecting) return;
+        currentCells = between(startCell, [
+          +e.target.dataset.r,
+          +e.target.dataset.c,
+        ]);
+        highlightSelecting();
+      }
+      function onTouchStart(e) {
+        e.preventDefault();
+        const el = document.elementFromPoint(
+          e.touches[0].clientX,
+          e.touches[0].clientY,
+        );
+        if (el?.classList.contains("cell")) {
+          selecting = true;
+          startCell = [+el.dataset.r, +el.dataset.c];
+          currentCells = [startCell];
+          highlightSelecting();
+        }
+      }
+      function onTouchMove(e) {
+        e.preventDefault();
+        if (!selecting) return;
+        const el = document.elementFromPoint(
+          e.touches[0].clientX,
+          e.touches[0].clientY,
+        );
+        if (el?.classList.contains("cell")) {
+          currentCells = between(startCell, [+el.dataset.r, +el.dataset.c]);
+          highlightSelecting();
+        }
+      }
+      function onUp() {
+        if (!selecting) return;
+        selecting = false;
+        checkSelection();
+        clearSelecting();
+      }
 
-function applyFoundColors(){
-  foundWords.forEach(fw=>fw.cells.forEach(([r,c])=>{const el=getEl(r,c);if(el)el.className='cell found-'+fw.colorIdx;}));
-}
+      function between([r1, c1], [r2, c2]) {
+        const dr = r2 - r1,
+          dc = c2 - c1,
+          len = Math.max(Math.abs(dr), Math.abs(dc));
+        if (!len) return [[r1, c1]];
+        const sr = dr === 0 ? 0 : dr / Math.abs(dr),
+          sc = dc === 0 ? 0 : dc / Math.abs(dc);
+        return Array.from({ length: len + 1 }, (_, i) => [
+          r1 + sr * i,
+          c1 + sc * i,
+        ]);
+      }
 
-function renderWordList(){
-  const list=document.getElementById('wordList');
-  list.innerHTML='';
-  WORD_DEFS.forEach((w,i)=>{
-    const div=document.createElement('div');
-    div.className='word-item';div.id='word-'+i;
-    div.innerHTML=`<span class="check">✓</span><span>${w.label}</span><span class="strike"></span>`;
-    list.appendChild(div);
-  });
-}
+      function highlightSelecting() {
+        document
+          .querySelectorAll(".cell.selecting")
+          .forEach((el) => el.classList.remove("selecting"));
+        currentCells.forEach(([r, c]) => {
+          const el = getEl(r, c);
+          if (el && !isFound(r, c)) el.classList.add("selecting");
+        });
+      }
+      function clearSelecting() {
+        document
+          .querySelectorAll(".cell.selecting")
+          .forEach((el) => el.classList.remove("selecting"));
+      }
+      function isFound(r, c) {
+        return foundWords.some((fw) =>
+          fw.cells.some(([fr, fc]) => fr === r && fc === c),
+        );
+      }
 
-function markWordFound(key,ci){
-  const i=WORD_DEFS.findIndex(w=>w.key===key);
-  const el=document.getElementById('word-'+i);
-  if(el)el.className='word-item found-'+ci;
-}
+      function checkSelection() {
+        if (currentCells.length < 2) return;
+        const sel = currentCells.map(([r, c]) => grid[r][c]).join("");
+        const rev = sel.split("").reverse().join("");
+        for (const p of placed) {
+          if (foundWords.find((fw) => fw.key === p.key)) continue;
+          if (p.key === sel || p.key === rev) {
+            const ci = WORD_DEFS.findIndex((w) => w.key === p.key);
+            foundWords.push({ ...p, colorIdx: ci });
+            applyFoundColors();
+            markWordFound(p.key, ci);
+            updateStatus();
+            break;
+          }
+        }
+      }
 
-function updateStatus(){
-  const n=foundWords.length, total=WORD_DEFS.length;
-  document.getElementById('progressBar').style.width=(n/total*100)+'%';
-  const s=document.getElementById('status');
-  s.textContent=n===total?'✦ All words found! ✦':`${n} of ${total} found`;
-  s.className=n===total?'status win':'status';
-}
+      function applyFoundColors() {
+        foundWords.forEach((fw) =>
+          fw.cells.forEach(([r, c]) => {
+            const el = getEl(r, c);
+            if (el) el.className = "cell found-" + fw.colorIdx;
+          }),
+        );
+      }
 
-init();
-</script>
-</body>
+      function renderWordList() {
+        const list = document.getElementById("wordList");
+        list.innerHTML = "";
+        WORD_DEFS.forEach((w, i) => {
+          const div = document.createElement("div");
+          div.className = "word-item";
+          div.id = "word-" + i;
+          div.innerHTML = `<span class="check">✓</span><span>${w.label}</span><span class="strike"></span>`;
+          list.appendChild(div);
+        });
+      }
+
+      function markWordFound(key, ci) {
+        const i = WORD_DEFS.findIndex((w) => w.key === key);
+        const el = document.getElementById("word-" + i);
+        if (el) el.className = "word-item found-" + ci;
+      }
+
+      function updateStatus() {
+        const n = foundWords.length,
+          total = WORD_DEFS.length;
+        document.getElementById("progressBar").style.width =
+          (n / total) * 100 + "%";
+        const s = document.getElementById("status");
+        s.textContent =
+          n === total ? "✦ All words found! ✦" : `${n} of ${total} found`;
+        s.className = n === total ? "status win" : "status";
+      }
+
+      init();
+    </script>
+  </body>
 </html>
