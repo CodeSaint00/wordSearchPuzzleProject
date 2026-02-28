@@ -54,7 +54,7 @@
     flex-wrap: wrap;
     justify-content: center;
     width: 100%;
-    max-width: 780px;
+    max-width: 900px;
   }
 
   .grid-wrapper {
@@ -90,12 +90,14 @@
   .cell.found-2 { background: #ffb6c1; color: #111; }
   .cell.found-3 { background: #87ceeb; color: #111; }
   .cell.found-4 { background: #dda0dd; color: #111; }
+  .cell.found-5 { background: #ffa07a; color: #111; }
+  .cell.found-6 { background: #98fb98; color: #111; }
 
-  .words-panel { min-width: 190px; }
+  .words-panel { min-width: 210px; }
 
   .words-panel h2 {
     font-family: 'Playfair Display', serif;
-    font-size: 3rem;
+    font-size: 1rem;
     color: #111;
     letter-spacing: 0.06em;
     margin-bottom: 14px;
@@ -112,7 +114,7 @@
     margin-bottom: 5px;
     border: 1.5px solid #ddd;
     border-radius: 2px;
-    font-size: 1.4rem;
+    font-size: 0.72rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: #444;
@@ -122,13 +124,15 @@
     overflow: hidden;
   }
 
-  .word-item .check { opacity: 0; transition: opacity 0.3s; }
+  .word-item .check { opacity: 0; transition: opacity 0.3s; flex-shrink: 0; }
 
   .word-item.found-0 { background: #fff9d6; border-color: #ffd700; color: #333; }
   .word-item.found-1 { background: #f0fff0; border-color: #90ee90; color: #333; }
   .word-item.found-2 { background: #fff0f3; border-color: #ffb6c1; color: #333; }
   .word-item.found-3 { background: #f0f8ff; border-color: #87ceeb; color: #333; }
   .word-item.found-4 { background: #faf0ff; border-color: #dda0dd; color: #333; }
+  .word-item.found-5 { background: #fff5f0; border-color: #ffa07a; color: #333; }
+  .word-item.found-6 { background: #f0fff4; border-color: #98fb98; color: #333; }
 
   .word-item[class*="found"] .check { opacity: 1; }
 
@@ -184,7 +188,7 @@
     <h2>Find Words</h2>
     <div id="wordList"></div>
     <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
-    <div class="status" id="status">0 of 5 found</div>
+    <div class="status" id="status">0 of 7 found</div>
     <button class="btn-reset" onclick="init()">↺ New Puzzle</button>
     <div class="instructions">
       Click &amp; drag to select<br>
@@ -194,23 +198,36 @@
 </div>
 
 <script>
-const WORDS = ['KINDHEARTED','RESERVED','RESPONSIBLE','CODESAINT','ENWEREFRANCIS'];
-const SIZE = 16;
+// Display labels (with spaces/original casing) vs search keys (uppercase, no spaces)
+const WORD_DEFS = [
+  { label: 'KINDHEARTED',      key: 'KINDHEARTED' },
+  { label: 'RESERVED',         key: 'RESERVED' },
+  { label: 'RESPONSIBLE',      key: 'RESPONSIBLE' },
+  { label: 'CODESAINT',        key: 'CODESAINT' },
+  { label: 'ENWEREFRANCIS',    key: 'ENWEREFRANCIS' },
+  { label: 'NHURMZY',          key: 'NHURMZY' },
+  { label: 'HAPPY BIRTHDAY',   key: 'HAPPYBIRTHDAY' },
+];
+
+const SIZE = 20;
 let grid=[], placed=[], selecting=false, startCell=null, currentCells=[], foundWords=[];
 
 function init() {
   grid = Array.from({length:SIZE}, () => Array(SIZE).fill(''));
   placed=[]; foundWords=[]; currentCells=[]; selecting=false;
-  [...WORDS].sort(()=>Math.random()-0.5).forEach(w => placeWord(w));
+  // Sort longest first for better placement
+  const sorted = [...WORD_DEFS].sort((a,b) => b.key.length - a.key.length);
+  sorted.forEach(w => placeWord(w));
   const alpha='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++)
     if(!grid[r][c]) grid[r][c]=alpha[Math.floor(Math.random()*26)];
   render(); renderWordList(); updateStatus();
 }
 
-function placeWord(word) {
+function placeWord(wordDef) {
+  const word = wordDef.key;
   const dirs=[[0,1],[1,0],[0,-1],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
-  for(let a=0;a<500;a++) {
+  for(let a=0;a<1000;a++) {
     const dir=dirs[Math.floor(Math.random()*8)];
     const row=Math.floor(Math.random()*SIZE), col=Math.floor(Math.random()*SIZE);
     const endR=row+dir[0]*(word.length-1), endC=col+dir[1]*(word.length-1);
@@ -223,7 +240,7 @@ function placeWord(word) {
     }
     if(!ok) continue;
     cells.forEach(([r,c],i)=>grid[r][c]=word[i]);
-    placed.push({word,cells}); return;
+    placed.push({...wordDef, cells}); return;
   }
 }
 
@@ -273,11 +290,11 @@ function checkSelection(){
   const sel=currentCells.map(([r,c])=>grid[r][c]).join('');
   const rev=sel.split('').reverse().join('');
   for(const p of placed){
-    if(foundWords.find(fw=>fw.word===p.word))continue;
-    if(p.word===sel||p.word===rev){
-      const ci=WORDS.indexOf(p.word);
-      foundWords.push({word:p.word,cells:p.cells,colorIdx:ci});
-      applyFoundColors();markWordFound(p.word,ci);updateStatus();break;
+    if(foundWords.find(fw=>fw.key===p.key))continue;
+    if(p.key===sel||p.key===rev){
+      const ci=WORD_DEFS.findIndex(w=>w.key===p.key);
+      foundWords.push({...p, colorIdx:ci});
+      applyFoundColors();markWordFound(p.key,ci);updateStatus();break;
     }
   }
 }
@@ -289,21 +306,22 @@ function applyFoundColors(){
 function renderWordList(){
   const list=document.getElementById('wordList');
   list.innerHTML='';
-  WORDS.forEach((w,i)=>{
+  WORD_DEFS.forEach((w,i)=>{
     const div=document.createElement('div');
     div.className='word-item';div.id='word-'+i;
-    div.innerHTML=`<span class="check">✓</span><span>${w}</span><span class="strike"></span>`;
+    div.innerHTML=`<span class="check">✓</span><span>${w.label}</span><span class="strike"></span>`;
     list.appendChild(div);
   });
 }
 
-function markWordFound(word,ci){
-  const el=document.getElementById('word-'+WORDS.indexOf(word));
+function markWordFound(key,ci){
+  const i=WORD_DEFS.findIndex(w=>w.key===key);
+  const el=document.getElementById('word-'+i);
   if(el)el.className='word-item found-'+ci;
 }
 
 function updateStatus(){
-  const n=foundWords.length,total=WORDS.length;
+  const n=foundWords.length, total=WORD_DEFS.length;
   document.getElementById('progressBar').style.width=(n/total*100)+'%';
   const s=document.getElementById('status');
   s.textContent=n===total?'✦ All words found! ✦':`${n} of ${total} found`;
